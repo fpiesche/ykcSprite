@@ -42,7 +42,7 @@ class ykcSprite(MonoBehaviour):
 		self.ManualDraw = false
 
 
-	def PlaceSprite (position as (int), center as bool):
+	def SetPosition (position as (int), center as bool):
 		# offset position by half sprite size to center
 		if center == true:
 			position[0] -= self.SpriteSize[0] / 2
@@ -52,7 +52,20 @@ class ykcSprite(MonoBehaviour):
 		self.CollisionRect = Rect(position[0] + self.SpriteSize[0], position[1] + self.SpriteSize[1], self.CollisionRect.width, self.CollisionRect.height)
 
 
-	def SetSprite (spriteToSet as (int)):
+	def Scale (factor as (int), center as bool):
+		# scale sprite by factor. Keep centered if center == true.
+		self.SetSize((self.SpriteRect.width * factor[0], self.SpriteRect.height * factor[1]), center)
+
+
+	def SetSize (newSize as (int), center as bool):
+		# set sprite size to newSize. Keep centered if center == true.
+		if center == true:
+			posOffset = (self.SpriteRect.size - newSize) / 2
+			self.SpriteRect.position += posOffset
+		self.spriteRect.size = newSize
+
+
+	def SetFrame (spriteToSet as (int)):
 		# change sprite to (int) offset. Can be called manually or via Animate(). Returns false on error, true on success.
 		if spriteToSet[0] > self.NumSprites[0] or spriteToSet[1] > self.NumSprites[1]:
 			Debug.Log("Sprite offset exceeds maximum! " + spriteToSet[0].ToString() + "," + spriteToSet[1].ToString() + " / numSprites: " + self.NumSprites[0].ToString() + "," + self.NumSprites[1].ToString())
@@ -80,7 +93,7 @@ class ykcSprite(MonoBehaviour):
 		else:
 			self.AnimationDirection = 0
 
-	def NumFrames ():
+	def GetNumFrames ():
 		# supplementary function for Animate() to find number of frames in spritesheet
 		return (self.SpriteSheet.width / self.SpriteSize[0])
 

@@ -45,11 +45,11 @@ class ykcSprite(MonoBehaviour):
 	def SetPosition (position as (int), center as bool):
 		# offset position by half sprite size to center
 		if center == true:
-			position[0] -= self.SpriteSize[0] / 2
-			position[1] -= self.SpriteSize[1] / 2
+			position[0] -= self.SpriteRect.width / 2
+			position[1] -= self.SpriteRect.width / 2
 		# place sprite at (int) pixel coordinates
-		self.SpriteRect = Rect(position[0], position[1], self.SpriteSize[0], self.SpriteSize[1])
-		self.CollisionRect = Rect(position[0] + self.SpriteSize[0], position[1] + self.SpriteSize[1], self.CollisionRect.width, self.CollisionRect.height)
+		self.SpriteRect = Rect(position[0], position[1], self.SpriteRect.width, self.SpriteRect.height)
+		self.CollisionRect = Rect(position[0] + self.SpriteRect.width, position[1] + self.SpriteRect.height, self.CollisionRect.width, self.CollisionRect.height)
 
 
 	def Scale (factor as (int), center as bool):
@@ -63,6 +63,11 @@ class ykcSprite(MonoBehaviour):
 			posOffset = (self.SpriteRect.size - newSize) / 2
 			self.SpriteRect.position += posOffset
 		self.spriteRect.size = newSize
+
+
+	def ResetSize ():
+		self.SetSize(self.SpriteSize, true)
+		return self.SpriteSize
 
 
 	def SetFrame (spriteToSet as (int)):
@@ -109,7 +114,7 @@ class ykcSprite(MonoBehaviour):
 			GUI.color.a = 1.0
 
 
-	def CollideCheckRect (collider as Rect):
+	def CollideCheckRect (collider as Rect, PixelPerfect as bool):
 		# check collision between self and Rect
 		for yCheck in range(collider.y, collider.y + collider.height):
 			for xCheck in range(collider.x, collider.x + collider.width):
@@ -118,7 +123,7 @@ class ykcSprite(MonoBehaviour):
 		return false
 
 
-	def CollideCheckSprite (collider as ykcSprite):
+	def CollideCheckSprite (collider as ykcSprite, PixelPerfect as bool):
 		# check collision between self and ykcSprite
 		for yCheck in range(collider.CollisionRect.y, collider.CollisionRect.y + collider.CollisionRect.height):
 			for xCheck in range(collider.CollisionRect.x, collider.CollisionRect.x + collider.CollisionRect.width):

@@ -2,7 +2,7 @@
 # 2012 Florian Piesche, florian@yellowkeycard.net
 # License: http://creativecommons.org/licenses/by-sa/3.0/
 
-# spriteSheet format: same-size frames; animation frames on horizontal axis.
+# SpriteSheet format: same-size frames; animation frames on horizontal axis.
 # call initSize((x, y)) once to set initial values for current frame, etc
 
 import UnityEngine
@@ -13,6 +13,7 @@ class ykcSprite(MonoBehaviour):
 	public CollisionRect as Rect = Rect(0, 0, 0, 0)
 	public SpriteTexCoords as Rect = Rect(0, 0, 0, 0)
 	public SpriteSheet as Texture2D
+	public CollisionMask as ((int))
 	public NumSprites as (int) = (0, 0)
 	public SpriteOffset as (int) = (0, 0)
 	public SpriteSize as (int) = (0, 0)
@@ -42,6 +43,22 @@ class ykcSprite(MonoBehaviour):
 		self.ManualDraw = false
 
 
+	def UpdateCollisionMask ():
+		# update self.CollisionMask with an 8bit representation of CurrentSprite's alpha channel
+		currentSpriteOffset = (self.CurrentSprite[0] * self.SpriteSize[0], self.CurrentSprite[1] * self.SpriteSize[1])
+		# TODO: this will fail horribly if the sprite is scaled.
+		visibleSprite = self.SpriteSheet.GetPixels(currentSpriteOffset[0], currentSpriteOffset[1], self.SpriteSize[0], self.SpriteSize[1], 0)
+		currentCol = 0
+		currentRow = 0
+		for row in visibleSprite:
+			for pixelData in row:
+				self.CollisionMask[currentRow][currentCol] = pixelData.a
+				CurrentCol += 1
+			CurrentRow += 1
+			CurrentCol = 0
+
+
+
 	def SetPosition (position as (int), center as bool):
 		# offset position by half sprite size to center
 		if center == true:
@@ -62,7 +79,11 @@ class ykcSprite(MonoBehaviour):
 		if center == true:
 			posOffset = (self.SpriteRect.size - newSize) / 2
 			self.SpriteRect.position += posOffset
+			self.CollisionRect.position += posOffset
 		self.spriteRect.size = newSize
+		sizeFactor = self.SpriteRect.size / newSize
+		self.CollisionRect.size = self.CollisionRect.size * sizeFactor
+		return newSize, self.CollisionRect.size
 
 
 	def ResetSize ():
@@ -81,7 +102,7 @@ class ykcSprite(MonoBehaviour):
 			spriteToSet[1] = Mathf.Abs(spriteToSet[1])
 		self.CurrentSprite = spriteToSet
 		self.SpriteTexCoords = Rect((spriteToSet[0] * self.SpriteSize[0]) / (self.SpriteSheet.width * 1.0F), (spriteToSet[1] * self.SpriteSize[1]) / (self.SpriteSheet.height * 1.0F), self.SpriteSize[0] / (self.SpriteSheet.width * 1.0F), self.SpriteSize[1] / (self.SpriteSheet.height * 1.0F))
-		return true
+		return self.CurrentSprite
 
 
 	def SetAnim (rowToSet as int, animSpeed as int, maxFrame as int, loop as bool, pingpong as bool, reverse as bool):
@@ -97,6 +118,7 @@ class ykcSprite(MonoBehaviour):
 			self.AnimationDirection = 1
 		else:
 			self.AnimationDirection = 0
+
 
 	def GetNumFrames ():
 		# supplementary function for Animate() to find number of frames in spritesheet
@@ -115,20 +137,20 @@ class ykcSprite(MonoBehaviour):
 
 
 	def CollideCheckRect (collider as Rect, PixelPerfect as bool):
-		# check collision between self and Rect
+		# check collision between self and Rect; returns first collision point
 		for yCheck in range(collider.y, collider.y + collider.height):
 			for xCheck in range(collider.x, collider.x + collider.width):
 				if self.CollisionRect.Contains(Vector2(xCheck, yCheck)):
-					return true
+					return (xCheck, yCheck)
 		return false
 
 
 	def CollideCheckSprite (collider as ykcSprite, PixelPerfect as bool):
-		# check collision between self and ykcSprite
+		# check collision between self and ykcSprite, returns first collision point
 		for yCheck in range(collider.CollisionRect.y, collider.CollisionRect.y + collider.CollisionRect.height):
 			for xCheck in range(collider.CollisionRect.x, collider.CollisionRect.x + collider.CollisionRect.width):
 				if self.CollisionRect.Contains(Vector2(xCheck, yCheck)):
-					return true
+					return (xCheck, yCheck)
 		return false
 
 

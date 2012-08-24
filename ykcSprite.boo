@@ -147,6 +147,8 @@ class ykcSprite(MonoBehaviour):
 					if self.CollisionRect.Contains(Vector2(xCheck, yCheck)):
 						return (xCheck, yCheck)
 			return false
+		else:
+			Debug.LogError("NYI: pixel-perfect ykcSprite/Rect collision")
 
 
 	def CollideCheckSprite (collider as ykcSprite, PixelPerfect as bool):
@@ -157,6 +159,8 @@ class ykcSprite(MonoBehaviour):
 					if self.CollisionRect.Contains(Vector2(xCheck, yCheck)):
 						return (xCheck, yCheck)
 			return false
+		else:
+			Debug.LogError("NYI: pixel-perfect ykcSprite/ykcSprite collision")
 
 
 	def Animate ():

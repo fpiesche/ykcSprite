@@ -13,7 +13,7 @@ class ykcSprite(MonoBehaviour):
 	public CollisionRect as Rect = Rect(0, 0, 0, 0)
 	public SpriteTexCoords as Rect = Rect(0, 0, 0, 0)
 	public SpriteSheet as Texture2D
-	public CollisionMask as ((int))
+	public CollisionMask as (,)
 	public NumSprites as (int) = (0, 0)
 	public SpriteOffset as (int) = (0, 0)
 	public SpriteSize as (int) = (0, 0)
@@ -44,19 +44,22 @@ class ykcSprite(MonoBehaviour):
 
 
 	def UpdateCollisionMask ():
+		self.CollisionMask = [,]
 		# update self.CollisionMask with an 8bit representation of CurrentSprite's alpha channel
 		currentSpriteOffset = (self.CurrentSprite[0] * self.SpriteSize[0], self.CurrentSprite[1] * self.SpriteSize[1])
-		# TODO: this will fail horribly if the sprite is scaled.
 		visibleSprite = self.SpriteSheet.GetPixels(currentSpriteOffset[0], currentSpriteOffset[1], self.SpriteSize[0], self.SpriteSize[1], 0)
 		currentCol = 0
 		currentRow = 0
 		for row in visibleSprite:
 			for pixelData in row:
-				self.CollisionMask[currentRow][currentCol] = pixelData.a
+				Debug.LogError(pixelData.ToString())
+				self.CollisionMask[currentRow, currentCol] = pixelData.a
 				CurrentCol += 1
 			CurrentRow += 1
 			CurrentCol = 0
-
+		if self.SpriteSize[0] != self.SpriteRect.width or self.SpriteSize[1] != self.SpriteRect.height:
+			# scale collision map here. Maybe use TextureScale - http://wiki.unity3d.com/index.php?title=TextureScale
+			Debug.Log("Sprite is scaled on screen, need to scale collision map")
 
 
 	def SetPosition (position as (int), center as bool):
@@ -137,21 +140,23 @@ class ykcSprite(MonoBehaviour):
 
 
 	def CollideCheckRect (collider as Rect, PixelPerfect as bool):
-		# check collision between self and Rect; returns first collision point
-		for yCheck in range(collider.y, collider.y + collider.height):
-			for xCheck in range(collider.x, collider.x + collider.width):
-				if self.CollisionRect.Contains(Vector2(xCheck, yCheck)):
-					return (xCheck, yCheck)
-		return false
+		if not PixelPerfect:
+			# check collision between self.SpriteRect and collider; returns first collision point
+			for yCheck in range(collider.y, collider.y + collider.height):
+				for xCheck in range(collider.x, collider.x + collider.width):
+					if self.CollisionRect.Contains(Vector2(xCheck, yCheck)):
+						return (xCheck, yCheck)
+			return false
 
 
 	def CollideCheckSprite (collider as ykcSprite, PixelPerfect as bool):
-		# check collision between self and ykcSprite, returns first collision point
-		for yCheck in range(collider.CollisionRect.y, collider.CollisionRect.y + collider.CollisionRect.height):
-			for xCheck in range(collider.CollisionRect.x, collider.CollisionRect.x + collider.CollisionRect.width):
-				if self.CollisionRect.Contains(Vector2(xCheck, yCheck)):
-					return (xCheck, yCheck)
-		return false
+		if not PixelPerfect:
+			# check collision between self.SpriteRect and collider.SpriteRect, returns first collision point
+			for yCheck in range(collider.CollisionRect.y, collider.CollisionRect.y + collider.CollisionRect.height):
+				for xCheck in range(collider.CollisionRect.x, collider.CollisionRect.x + collider.CollisionRect.width):
+					if self.CollisionRect.Contains(Vector2(xCheck, yCheck)):
+						return (xCheck, yCheck)
+			return false
 
 
 	def Animate ():

@@ -13,7 +13,7 @@ class ykcSprite(MonoBehaviour):
 	public CollisionRect as Rect = Rect(0, 0, 0, 0)
 	public SpriteTexCoords as Rect = Rect(0, 0, 0, 0)
 	public SpriteSheet as Texture2D
-	public CollisionMask as (,)
+	public CollisionTex as Texture2D
 	public NumSprites as (int) = (0, 0)
 	public SpriteOffset as (int) = (0, 0)
 	public SpriteSize as (int) = (0, 0)
@@ -35,7 +35,7 @@ class ykcSprite(MonoBehaviour):
 		self.SpriteRect = Rect(self.SpriteRect.x, self.SpriteRect.y, size[0], size[1])
 		self.NumSprites = (self.SpriteSheet.width / size[0], self.SpriteSheet.height / size[1])
 		self.SpriteTexCoords = Rect(0, 0, size[0], size[1])
-		self.SetSprite((0,0))
+		self.SetFrame((0,0))
 		self.CollisionRect.width = collisionSize[0]
 		self.CollisionRect.height = collisionSize[1]
 		self.AnimationActive = false
@@ -43,23 +43,11 @@ class ykcSprite(MonoBehaviour):
 		self.ManualDraw = false
 
 
-	def UpdateCollisionMask ():
-		self.CollisionMask = [,]
-		# update self.CollisionMask with an 8bit representation of CurrentSprite's alpha channel
-		currentSpriteOffset = (self.CurrentSprite[0] * self.SpriteSize[0], self.CurrentSprite[1] * self.SpriteSize[1])
-		visibleSprite = self.SpriteSheet.GetPixels(currentSpriteOffset[0], currentSpriteOffset[1], self.SpriteSize[0], self.SpriteSize[1], 0)
-		currentCol = 0
-		currentRow = 0
-		for row in visibleSprite:
-			for pixelData in row:
-				Debug.LogError(pixelData.ToString())
-				self.CollisionMask[currentRow, currentCol] = pixelData.a
-				CurrentCol += 1
-			CurrentRow += 1
-			CurrentCol = 0
-		if self.SpriteSize[0] != self.SpriteRect.width or self.SpriteSize[1] != self.SpriteRect.height:
-			# scale collision map here. Maybe use TextureScale - http://wiki.unity3d.com/index.php?title=TextureScale
-			Debug.Log("Sprite is scaled on screen, need to scale collision map")
+	def UpdateCollisionTex ():
+		# update self.CollisionTex with an 8bit representation of CurrentSprite's alpha channel
+		self.CollisionTex = Texture2D(self.SpriteSheet.width, self.SpriteSheet.height, TextureFormat.Alpha8, false)
+		self.CollisionTex.SetPixels(self.SpriteSheet.GetPixels(0, 0, self.SpriteSize[0], self.SpriteSize[1], 0))
+		self.CollisionTex.Apply()
 
 
 	def SetPosition (position as (int), center as bool):
@@ -72,21 +60,23 @@ class ykcSprite(MonoBehaviour):
 		self.CollisionRect = Rect(position[0] + self.SpriteRect.width, position[1] + self.SpriteRect.height, self.CollisionRect.width, self.CollisionRect.height)
 
 
-	def Scale (factor as (int), center as bool):
+	def Scale (factor as (single), center as bool):
 		# scale sprite by factor. Keep centered if center == true.
-		self.SetSize((self.SpriteRect.width * factor[0], self.SpriteRect.height * factor[1]), center)
+		self.SetSize((Mathf.RoundToInt(self.SpriteRect.width * factor[0]), Mathf.RoundToInt(self.SpriteRect.height * factor[1])), center)
 
 
 	def SetSize (newSize as (int), center as bool):
 		# set sprite size to newSize. Keep centered if center == true.
 		if center == true:
-			posOffset = (self.SpriteRect.size - newSize) / 2
-			self.SpriteRect.position += posOffset
-			self.CollisionRect.position += posOffset
-		self.spriteRect.size = newSize
-		sizeFactor = self.SpriteRect.size / newSize
-		self.CollisionRect.size = self.CollisionRect.size * sizeFactor
-		return newSize, self.CollisionRect.size
+			posOffset = ((self.SpriteRect.x - newSize[0]) / 2, (self.SpriteRect.y - newSize[1]) / 2)
+			self.SpriteRect.x += posOffset[0]
+			self.SpriteRect.y += posOffset[1]
+			self.CollisionRect.x += posOffset[0]
+			self.CollisionRect.y += posOffset[1]
+		self.SpriteRect.Set(self.SpriteRect.x + posOffset[0], self.SpriteRect.y + posOffset[1], newSize[0], newSize[1])
+		sizeFactor = (1.0F * self.SpriteRect.width / newSize[0], 1.0F * self.SpriteRect.height / newSize[1])
+		self.CollisionRect.Set(self.CollisionRect.x + posOffset[0], self.CollisionRect.y + posOffset[1], self.CollisionRect.width * sizeFactor[0], self.CollisionRect.height * sizeFactor[1])
+		return newSize, (self.CollisionRect.width, self.CollisionRect.height)
 
 
 	def ResetSize ():
@@ -110,7 +100,7 @@ class ykcSprite(MonoBehaviour):
 
 	def SetAnim (rowToSet as int, animSpeed as int, maxFrame as int, loop as bool, pingpong as bool, reverse as bool):
 		# start animation from rowToSet, animSpeed ms per frame, end/loop after maxFrames.
-		self.SetSprite((0, rowToSet))
+		self.SetFrame((0, rowToSet))
 		self.AnimationActive = true
 		self.AnimationLoop = loop
 		self.AnimationTimer = (Time.time * 1000) + animSpeed
@@ -169,7 +159,7 @@ class ykcSprite(MonoBehaviour):
 			# animation timeout reached
 			if self.CurrentSprite[0] == AnimationFrames and AnimationLoop == true:
 				# max frame reached and need to loop
-				self.SetSprite((0, self.CurrentSprite[1]))
+				self.SetFrame((0, self.CurrentSprite[1]))
 				self.AnimationTimer = (Time.time * 1000) + self.AnimationSpeed
 			elif self.CurrentSprite[0] == AnimationFrames and AnimationLoop == false:
 				# max frame reached and no loop, stop anim timer
@@ -179,7 +169,7 @@ class ykcSprite(MonoBehaviour):
 				self.AnimationFrames = 0
 			else:
 				# advance frame, reset animation timer
-				self.SetSprite((self.CurrentSprite[0] + self.AnimationDirection, self.CurrentSprite[1]))
+				self.SetFrame((self.CurrentSprite[0] + self.AnimationDirection, self.CurrentSprite[1]))
 				self.AnimationTimer = (Time.time * 1000) + self.AnimationSpeed
 
 

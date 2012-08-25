@@ -6,18 +6,19 @@ import UnityEngine
 
 class ykcSpriteManager(MonoBehaviour):
 
-	public Layers as Hashtable = {}
+	public Layers as Hash = {}
 
 
 	def AddLayer (LayerName as string):
 		# add LayerName to Layers
-		self.Layers[LayerName] = ()
+		self.Layers.Add(LayerName, (null))
 
 
 	def AddSprite (LayerName as string, Sprite as ykcSprite):
 		# disable automatic draw on Sprite and add Sprite to LayerName
-		ykcSprite.ManualDraw = true
-		self.Layers[LayerName].Add(Sprite)
+		self.Layers.Add(LayerName, Sprite)
+		Sprite.ManualDraw = true
+		return LayerName
 
 
 	def PurgeSprite (Sprite as ykcSprite):
@@ -41,7 +42,7 @@ class ykcSpriteManager(MonoBehaviour):
 
 	def GetLayerNames ():
 		# returns a list of layers (as string)
-		return self.Layers.keys()
+		return self.Layers.Keys.ToString()
 
 
 	def FindSprite (Sprite as ykcSprite):

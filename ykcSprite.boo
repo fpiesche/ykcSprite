@@ -38,6 +38,7 @@ class ykcSprite(MonoBehaviour):
 		self.SetFrame((0,0))
 		self.CollisionRect.width = collisionSize[0]
 		self.CollisionRect.height = collisionSize[1]
+		self.UpdateCollisionTex()
 		self.AnimationActive = false
 		self.Visible = true
 		self.ManualDraw = false
@@ -130,27 +131,34 @@ class ykcSprite(MonoBehaviour):
 
 
 	def CollideCheckRect (collider as Rect, PixelPerfect as bool):
-		if not PixelPerfect:
-			# check collision between self.SpriteRect and collider; returns first collision point
-			for yCheck in range(collider.y, collider.y + collider.height):
-				for xCheck in range(collider.x, collider.x + collider.width):
-					if self.CollisionRect.Contains(Vector2(xCheck, yCheck)):
-						return (xCheck, yCheck)
-			return false
-		else:
-			Debug.LogError("NYI: pixel-perfect ykcSprite/Rect collision")
+		# check collision between self.SpriteRect and collider; returns first collision point
+		for yCheck in range(collider.y, collider.y + collider.height):
+			for xCheck in range(collider.x, collider.x + collider.width):
+				if self.CollisionRect.Contains(Vector2(xCheck, yCheck)):
+					return (xCheck, yCheck)
+		if PixelPerfect:
+			Debug.Log("NYI: pixel-perfect ykcSprite/Rect collision")
 
+		return false
 
 	def CollideCheckSprite (collider as ykcSprite, PixelPerfect as bool):
-		if not PixelPerfect:
-			# check collision between self.SpriteRect and collider.SpriteRect, returns first collision point
-			for yCheck in range(collider.CollisionRect.y, collider.CollisionRect.y + collider.CollisionRect.height):
-				for xCheck in range(collider.CollisionRect.x, collider.CollisionRect.x + collider.CollisionRect.width):
-					if self.CollisionRect.Contains(Vector2(xCheck, yCheck)):
-						return (xCheck, yCheck)
-			return false
-		else:
+		rectCollide = false
+		collisionPoint = null
+		# check collision between self.SpriteRect and collider.SpriteRect, returns first collision point
+		for yCheck in range(collider.CollisionRect.y, collider.CollisionRect.y + collider.CollisionRect.height):
+			for xCheck in range(collider.CollisionRect.x, collider.CollisionRect.x + collider.CollisionRect.width):
+				if self.CollisionRect.Contains(Vector2(xCheck, yCheck)):
+					collisionPoint = (xCheck, yCheck)
+					rectCollide = true
+					break
+		if PixelPerfect and rectCollide:
+			# build list from self: GetPixels of SpriteSheet slice of CurrentSprite. If a > 0, offset by SpriteRect.x/SpriteRect.y and add to list.
+			# repeat for collider.
+			# for pixel in list: if pixel in collider.screenPixels: collisionPoint = pixel
+			# NOT COMPATIBLE WITH SCALING. WHAT DO I DO
 			Debug.LogError("NYI: pixel-perfect ykcSprite/ykcSprite collision")
+
+		return collisionPoint
 
 
 	def Animate ():
